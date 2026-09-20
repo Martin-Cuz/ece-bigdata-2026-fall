@@ -1,0 +1,12 @@
+2024-01-15T10:23:45 INFO Starting Spark job
+2024-01-15T10:23:46 INFO Initializing RDD
+2024-01-15T10:23:47 DEBUG Partition 1 assigned to worker-1
+2024-01-15T10:23:48 DEBUG Partition 2 assigned to worker-2
+2024-01-15T10:24:00 INFO Map phase complete
+2024-01-15T10:24:15 INFO Shuffle phase complete
+2024-01-15T10:24:30 INFO Reduce phase complete
+2024-01-15T10:24:45 INFO Job succeeded
+2024-01-15T10:24:46 INFO Output written to HDFS
+2024-01-15T10:24:47 INFO Cleaning up
+2024-01-15T10:25:00 INFO New event
+2024-01-15T10:25:01 INFO Another event
