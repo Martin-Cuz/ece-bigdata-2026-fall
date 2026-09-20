@@ -1,77 +1,71 @@
-# Lab 1 — Réponses aux questions
+# Lab 1 — Answers
 
-## Note sur l'environnement
+## Quick note on my setup
 
-Ma machine tourne sous WSL2 en architecture **ARM64** (`aarch64`). L'image
-officielle `gcr.io/google-samples/kubernetes-bootcamp:v1` n'est disponible
-qu'en `amd64` et échoue au démarrage avec `exec format error`. J'ai donc
-utilisé l'image de remplacement compatible ARM64 **`baniyuga/kubernetes-bootcamp:v1`**,
-qui reproduit le même comportement applicatif (même code Node.js).
+My machine runs WSL2 on **ARM64** (`aarch64`), not the usual `amd64`. The
+official `gcr.io/google-samples/kubernetes-bootcamp:v1` image is
+`amd64`-only, so it crashed with `exec format error` as soon as I tried to
+run it. I swapped it for **`baniyuga/kubernetes-bootcamp:v1`**, an
+ARM64-compatible build of the same app, and everything worked the same way
+from there.
 
-Pour la même raison, les images `jocatalin/kubernetes-bootcamp:v2` et `:v3`
-utilisées dans la partie 5 (rolling update) sont elles aussi en `amd64`
-uniquement et n'ont pas pu être testées sur cette machine (crash immédiat
-en `Error` / `exec format error`). Le rollback (`kubectl rollout undo`) a
-bien fonctionné et a restauré le déploiement stable sur l'image ARM64.
+Same story for `jocatalin/kubernetes-bootcamp:v2` and `:v3` in the rolling
+update part — both `amd64`-only, so those pods just kept crashing. I used
+`kubectl rollout undo` to roll back to the working ARM64 image instead of
+forcing it.
 
-## Partie 1 — Installation de minikube
+## Part 1 — Installing minikube
 
-`kubectl top pods -A --sort-by cpu --sum=true` liste la consommation CPU de
-tous les pods de tous les namespaces, triée par ordre décroissant de CPU
-utilisé, avec une ligne de total (`--sum=true`) agrégeant la consommation
-de l'ensemble des pods.
+`kubectl top pods -A --sort-by cpu --sum=true` shows CPU usage for every
+pod across all namespaces, sorted from highest to lowest, plus a total row
+at the end (`--sum=true`) adding it all up.
 
-## Partie 2 — Commandes `kubectl`
+## Part 2 — kubectl basics
 
-- Hors du pod, l'application **n'est pas accessible** depuis la machine
-  locale : le port 8080 n'est exposé qu'à l'intérieur du réseau du pod,
-  aucun Service Kubernetes ne le relie encore vers l'extérieur.
+- No, you can't reach the app from outside the pod at this point. Port
+  8080 only exists inside the pod's network — nothing is routing it to the
+  outside world yet, that's what the Service is for.
 
-## Partie 3 — Exposer un service
+## Part 3 — Exposing a service
 
-- Le service a été exposé en `NodePort` sur le port `8080` (port interne)
-  mappé à un port aléatoire côté cluster (ex: `32737`).
-- Avec le driver Docker sous Linux/WSL, un tunnel (`minikube service ...`)
-  est nécessaire pour accéder au service depuis le navigateur — confirmé
-  en ouvrant l'URL `http://127.0.0.1:<port_tunnel>` dans le navigateur, qui
-  affiche bien `Hello Kubernetes bootcamp! | Running on: <nom-du-pod>`.
+- Exposed the deployment as `NodePort` on port `8080`, which mapped to a
+  random high port on the cluster side (something like `32737`).
+- Since I'm on the Docker driver, I needed `minikube service ...` to open
+  a tunnel — after that, `http://127.0.0.1:<tunnel-port>` worked fine in
+  the browser and showed `Hello Kubernetes bootcamp! | Running on: <pod-name>`.
 
-## Partie 4 — Scale up / down
+## Part 4 — Scaling up and down
 
-- Commande utilisée pour vérifier les pods : `kubectl get pods -l app=kubernetes-bootcamp`.
-- Après passage à 5 répliques, un rafraîchissement répété (Ctrl+F5) de la
-  page fait apparaître des noms de pods différents à chaque requête : le
-  Service répartit la charge (**load balancing**) entre toutes les
-  répliques actives.
-- Après redescente à 2 répliques, les 3 pods en trop passent bien au statut
-  `Terminating` puis disparaissent.
+- Used `kubectl get pods -l app=kubernetes-bootcamp` to check how many pods
+  were running.
+- With 5 replicas, hammering Ctrl+F5 on the page kept showing different pod
+  names each time — the Service is load-balancing across all the replicas.
+- Scaling back down to 2, the other 3 pods went into `Terminating` and then
+  disappeared.
 
-## Partie 5 — Rolling update
+## Part 5 — Rolling update
 
-- Le passage à `jocatalin/kubernetes-bootcamp:v2` a provoqué un
-  `CrashLoopBackOff` (image incompatible avec l'architecture ARM64 de la
-  machine), empêchant d'observer le comportement normal de mise à jour
-  progressive sur cette version précise.
-- `kubectl rollout undo deployments/kubernetes-bootcamp` a bien annulé le
-  changement et restauré les pods sains sur l'ancienne image (ARM64).
-- Le principe du rolling update (transition progressive entre anciens et
-  nouveaux pods, visible via le changement de nom de pod dans la réponse
-  HTTP) avait déjà été observé lors de la création initiale du deployment.
+- Switching to `jocatalin/kubernetes-bootcamp:v2` triggered a
+  `CrashLoopBackOff` — wrong architecture for my machine, so I couldn't
+  actually see this specific update play out.
+- `kubectl rollout undo deployments/kubernetes-bootcamp` rolled it back
+  cleanly to the working ARM64 image.
+- I did get to see the general rolling-update behavior earlier though — pod
+  names changing as new pods take over from old ones.
 
-## Partie 6 — Manifests YAML
+## Part 6 — YAML manifests
 
-- `TO COMPLETE #1` (deployment.yaml, dans `containers`) →
-  `image: baniyuga/kubernetes-bootcamp:v1` (version ARM64 de l'image du lab).
-- `TO COMPLETE #2` (deployment.yaml, dans `spec`) → `replicas: 1` (puis `3`
-  à l'étape 6.6).
-- `TO COMPLETE` (service.yaml, `selector.app`) → `kubernetes-bootcamp`
-  (doit correspondre au label du pod).
-- `TO COMPLETE` (service.yaml, `ports.port`) → `8080` (port d'écoute de
-  l'application Node.js).
-- Après `kubectl apply -f deployment.yaml`, les pods démarrent bien en
-  `Running`.
-- Après `kubectl apply -f service.yaml`, le service est accessible via le
-  navigateur (tunnel minikube), réponse HTTP confirmée.
-- Avec `replicas: 3`, les rafraîchissements répétés du navigateur montrent
-  bien des noms de pods différents (`6wtpp`, `q4ztv`, `z65b5`), confirmant
-  la répartition de charge entre les 3 répliques.
+- `TO COMPLETE #1` (deployment.yaml, containers) →
+  `image: baniyuga/kubernetes-bootcamp:v1` (the ARM64 build).
+- `TO COMPLETE #2` (deployment.yaml, spec) → `replicas: 1`, bumped to `3`
+  later in step 6.6.
+- `TO COMPLETE` (service.yaml, selector.app) → `kubernetes-bootcamp`,
+  matching the pod's label.
+- `TO COMPLETE` (service.yaml, ports.port) → `8080`, the app's listening
+  port.
+- After `kubectl apply -f deployment.yaml`, pods came up fine.
+- After `kubectl apply -f service.yaml`, the app was reachable through the
+  browser via the minikube tunnel.
+- With `replicas: 3`, refreshing the page repeatedly showed three different
+  pod names (`6wtpp`, `q4ztv`, `z65b5`) — confirms the load balancing across
+  replicas.
