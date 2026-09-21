@@ -2,23 +2,34 @@
 
 ## Quick note on my setup
 
-My machine runs WSL2 on **ARM64** (`aarch64`), not the usual `amd64`. The
-official `gcr.io/google-samples/kubernetes-bootcamp:v1` image is
-`amd64`-only, so it crashed with `exec format error` as soon as I tried to
-run it. I swapped it for **`baniyuga/kubernetes-bootcamp:v1`**, an
-ARM64-compatible build of the same app, and everything worked the same way
-from there.
+I actually ran this lab in two different environments, and the final
+`deployment.yaml` / `service.yaml` committed here reflect the **Onyxia**
+version (a VS Code service on a shared Kubernetes cluster), not the
+original WSL/minikube run.
 
-Same story for `jocatalin/kubernetes-bootcamp:v2` and `:v3` in the rolling
-update part — both `amd64`-only, so those pods just kept crashing. I used
-`kubectl rollout undo` to roll back to the working ARM64 image instead of
-forcing it.
+**On WSL2 (ARM64, `aarch64`)**: the official
+`gcr.io/google-samples/kubernetes-bootcamp:v1` image is `amd64`-only, so
+it crashed with `exec format error`. I swapped it for
+`baniyuga/kubernetes-bootcamp:v1`, an ARM64-compatible build, to get
+things working locally.
+
+**On Onyxia**: the cluster runs `amd64`, so the official Google image
+works fine with no swap needed. Instead, the namespace enforces a
+**resource quota** (`onyxia-quota`) — every pod needs explicit
+`resources.requests`/`resources.limits` or it gets rejected outright
+(`failed quota: ... must specify limits.cpu ...`). My account also can't
+use `NodePort` the way minikube does (no `minikube ip`, no Docker tunnel),
+so the service is `ClusterIP` and I reach it with `kubectl port-forward`
+or by calling the service name directly from inside the cluster.
 
 ## Part 1 — Installing minikube
 
 `kubectl top pods -A --sort-by cpu --sum=true` shows CPU usage for every
 pod across all namespaces, sorted from highest to lowest, plus a total row
 at the end (`--sum=true`) adding it all up.
+
+(Note: on Onyxia there's no `minikube start`/`status`/`ip` — the cluster
+is already there, shared, with my own namespace pre-configured.)
 
 ## Part 2 — kubectl basics
 
@@ -28,44 +39,59 @@ at the end (`--sum=true`) adding it all up.
 
 ## Part 3 — Exposing a service
 
-- Exposed the deployment as `NodePort` on port `8080`, which mapped to a
-  random high port on the cluster side (something like `32737`).
-- Since I'm on the Docker driver, I needed `minikube service ...` to open
-  a tunnel — after that, `http://127.0.0.1:<tunnel-port>` worked fine in
-  the browser and showed `Hello Kubernetes bootcamp! | Running on: <pod-name>`.
+- **WSL**: exposed as `NodePort` on port `8080`, mapped to a random high
+  port (`32737`-ish). Needed `minikube service ...` to open a Docker
+  tunnel, then `http://127.0.0.1:<tunnel-port>` worked in the browser.
+- **Onyxia**: `NodePort` isn't practical here — used `ClusterIP` instead
+  and `kubectl port-forward service/kubernetes-bootcamp-service
+  8082:8080`, then `curl localhost:8082` (had to pick a port other than
+  8080, since VS Code's own web UI already uses that one). Both showed
+  `Hello Kubernetes bootcamp! | Running on: <pod-name>`.
 
 ## Part 4 — Scaling up and down
 
-- Used `kubectl get pods -l app=kubernetes-bootcamp` to check how many pods
-  were running.
-- With 5 replicas, hammering Ctrl+F5 on the page kept showing different pod
-  names each time — the Service is load-balancing across all the replicas.
-- Scaling back down to 2, the other 3 pods went into `Terminating` and then
+- Used `kubectl get pods -l app=kubernetes-bootcamp` to check how many
+  pods were running.
+- With multiple replicas, repeated `curl`/refreshes showed different pod
+  names — the Service load-balances across all replicas. One catch on
+  Onyxia: `kubectl port-forward` targets one fixed pod and does **not**
+  load-balance; calling the service by its DNS name from inside the
+  cluster (`curl kubernetes-bootcamp-service:8080`) does show the
+  round-robin behavior properly.
+- Scaling back down, the extra pods went into `Terminating` and then
   disappeared.
 
 ## Part 5 — Rolling update
 
 - Switching to `jocatalin/kubernetes-bootcamp:v2` triggered a
-  `CrashLoopBackOff` — wrong architecture for my machine, so I couldn't
-  actually see this specific update play out.
-- `kubectl rollout undo deployments/kubernetes-bootcamp` rolled it back
-  cleanly to the working ARM64 image.
-- I did get to see the general rolling-update behavior earlier though — pod
-  names changing as new pods take over from old ones.
+  `CrashLoopBackOff` on WSL (wrong architecture). `kubectl rollout undo`
+  rolled it back cleanly to the working ARM64 image.
+- `jocatalin/kubernetes-bootcamp:v3` doesn't exist on Docker Hub at all —
+  it fails with `ImagePullBackOff` no matter the platform. Since
+  `RollingUpdate` waits for the new pod to be ready before killing old
+  ones, the old (working) pods just kept serving traffic the whole time —
+  no downtime despite the broken update.
+- Rolled back to the original image with `kubectl rollout undo`.
 
 ## Part 6 — YAML manifests
 
+Final values used (Onyxia version, matching the committed files):
+
 - `TO COMPLETE #1` (deployment.yaml, containers) →
-  `image: baniyuga/kubernetes-bootcamp:v1` (the ARM64 build).
+  `image: gcr.io/google-samples/kubernetes-bootcamp:v1`, plus a
+  `resources` block (`requests`/`limits` for cpu and memory) — required
+  by the Onyxia quota, not part of the original lab instructions.
 - `TO COMPLETE #2` (deployment.yaml, spec) → `replicas: 1`, bumped to `3`
   later in step 6.6.
 - `TO COMPLETE` (service.yaml, selector.app) → `kubernetes-bootcamp`,
   matching the pod's label.
 - `TO COMPLETE` (service.yaml, ports.port) → `8080`, the app's listening
-  port.
-- After `kubectl apply -f deployment.yaml`, pods came up fine.
-- After `kubectl apply -f service.yaml`, the app was reachable through the
-  browser via the minikube tunnel.
-- With `replicas: 3`, refreshing the page repeatedly showed three different
-  pod names (`6wtpp`, `q4ztv`, `z65b5`) — confirms the load balancing across
-  replicas.
+  port. Service type is `ClusterIP` (not `NodePort`) with `targetPort:
+  8080` added explicitly.
+- After `kubectl apply -f deployment.yaml`, pods came up fine (once the
+  resource quota was satisfied).
+- After `kubectl apply -f service.yaml`, the app was reachable via
+  `kubectl port-forward` and via the service's DNS name from inside the
+  cluster.
+- With `replicas: 3`, calling the service by DNS name repeatedly showed
+  three different pod names — confirms load balancing across replicas.
