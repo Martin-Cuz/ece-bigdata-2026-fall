@@ -16,4 +16,11 @@ spec:
     spec:
       containers:
       - name: kubernetes-bootcamp
-        image: baniyuga/kubernetes-bootcamp:v1
+        image: gcr.io/google-samples/kubernetes-bootcamp:v1
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "200m"
+            memory: "256Mi"
