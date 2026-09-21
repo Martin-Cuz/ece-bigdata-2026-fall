@@ -23,6 +23,8 @@ A ConfigMap stores non-sensitive configuration data as key-value pairs or entire
 
 - Use ConfigMap for:
 
+
+
   - Application settings (database host, log level, timeouts)
   - Feature flags
   - Non-secret configuration files (application.yaml, app.properties)

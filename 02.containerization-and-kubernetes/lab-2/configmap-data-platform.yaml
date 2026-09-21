@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: data-platform-config
+data:
+  log_level: INFO
+  spark_workers: "4"
+  batch_size: "1000"
+  application.yaml: |
+    pipeline:
+      name: bronze-to-silver-etl
+      schedule: "0 2 * * *"
+      timeout_minutes: 120
+    storage:
+      type: s3
+      endpoint: ceph-rgw.ceph-storage.svc.cluster.local:7480
+      region: us-east-1
+    kafka:
+      bootstrap_servers: kafka-0.kafka.svc.cluster.local:9092
+      consumer_group: data-platform-consumers
+      topic_prefix: data.bronze
+  table_mappings.csv: |
+    source_table,bronze_path,silver_layer
+    customers,/data/bronze/customers,deduplicated_customers
+    orders,/data/bronze/orders,aggregated_orders
+    products,/data/bronze/products,product_catalog

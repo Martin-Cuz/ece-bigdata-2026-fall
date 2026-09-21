@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: spark-app
+spec:
+  containers:
+  - name: spark
+    image: apache/spark:latest
+    command: ["sleep", "600"]
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "256Mi"
+      limits:
+        cpu: "500m"
+        memory: "512Mi"
+    env:
+    - name: LOG_LEVEL
+      valueFrom:
+        configMapKeyRef:
+          name: data-platform-config
+          key: log_level
+    - name: SPARK_WORKERS
+      valueFrom:
+        configMapKeyRef:
+          name: data-platform-config
+          key: spark_workers
+    envFrom:
+    - configMapRef:
+        name: data-platform-config
