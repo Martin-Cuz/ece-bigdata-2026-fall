@@ -177,7 +177,9 @@ Under the hood this is a single HTTP `PUT` request. The object is written atomic
 state during the upload.
 
 ```bash
-cd /home/onyxia/work
+# Define the name of your repo/directory accordinly
+GIT_REPO_NAME=<git-repo-name>
+cd /home/onyxia/work/$GIT_REPO_NAME
 uv run dataset-users -o csv > users.csv
 aws s3 --profile 'default' cp users.csv "s3://$LAB_BUCKET_NAME/bronze/users.csv"
 # Equivalent with s5cmd:

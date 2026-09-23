@@ -49,7 +49,8 @@ Move into the project and set the environment variables of the S3 lab. As a remi
 credentials from the `default` profile of the AWS configuration files.
 
 ```bash
-cd /home/onyxia/work
+GIT_REPO_NAME=<git-repo-name>
+cd /home/onyxia/work/$GIT_REPO_NAME
 export S3_ENDPOINT_URL=$(
   aws configure get endpoint_url --profile 'default' \
   || echo "https://$AWS_S3_ENDPOINT"
@@ -199,7 +200,10 @@ raw datasets of the bronze layer.
 
 ```sql
 SELECT uuid, username, name, birthdate
-FROM read_csv(getvariable('bucket') || '/bronze/users.csv')
+FROM read_csv(
+  getvariable('bucket') || '/bronze/users.csv',
+  header = true,
+  strict_mode = false)
 LIMIT 3;
 -- ┌──────────────────────────────────────┬────────────────┬────────────────┬────────────┐
 -- │                 uuid                 │    username    │      name      │ birthdate  │
@@ -606,13 +610,13 @@ Questions:
 ## CSV vs. Parquet at scale
 
 The bronze datasets are too small to observe a difference of performance. Exit the CLI with `.quit`, generate a dataset
-of about 1 million orders for 20,000 users, and upload it to the `large/` prefix. The generation takes about 30 seconds.
+of about 250,000 orders for 5,000 users, and upload it to the `large/` prefix. The generation takes about 30 seconds.
 The orders are placed one hour apart: the dates span more than a century.
 
 ```bash
-uv run dataset-orders -u 20000 -o csv > orders_large.csv
+uv run dataset-orders -u 5000 -o csv > orders_large.csv
 ls -lh orders_large.csv
-#> -rw-r--r-- 1 onyxia users 112M Sep 17 10:00 orders_large.csv
+#> -rw-r--r-- 1 onyxia users 54M Sep 17 10:00 orders_large.csv
 s5cmd --profile 'default' cp orders_large.csv "s3://$LAB_BUCKET_NAME/large/orders.csv"
 ```
 
@@ -625,7 +629,7 @@ duckdb analytics.duckdb -init init.sql
 
 ```sql
 .timer on
-COPY (FROM read_csv(getvariable('bucket') || '/large/orders.csv'))
+COPY (FROM read_csv(getvariable('bucket') || '/large/orders.csv', strict_mode=false))
 TO (getvariable('bucket') || '/large/orders.parquet') (FORMAT parquet);
 SELECT count(*) FROM read_parquet(getvariable('bucket') || '/large/orders.parquet');
 -- ┌──────────────┐
@@ -651,7 +655,7 @@ output reports the number of requests and the volume of data received.
 
 ```bash
 for query in \
-  "FROM read_csv(getvariable('bucket') || '/large/orders.csv') SELECT product, sum(quantity) GROUP BY product" \
+  "FROM read_csv(getvariable('bucket') || '/large/orders.csv', strict_mode=false) SELECT product, sum(quantity) GROUP BY product" \
   "FROM read_parquet(getvariable('bucket') || '/large/orders.parquet') SELECT product, sum(quantity) GROUP BY product" \
   "FROM read_parquet(getvariable('bucket') || '/large/orders.parquet') SELECT count(*) WHERE date >= '2100-01-01'"
 do
@@ -722,11 +726,11 @@ uv add duckdb
 
 The `orders_report.py` script prints the monthly orders, optionally filtered on a product. The Python library loads the
 `s3_onyxia_connection` persistent secret like the CLI, and the bucket name is read from the environment variables. The
-product is passed as a query parameter, `$product`, instead of being concatenated into the SQL string, which prevents
+product is passed as a query parameter, `$pworkroduct`, instead of being concatenated into the SQL string, which prevents
 SQL injection.
 
 ```bash
-cat <<'PY' >src/work/orders_report.py
+cat <<'PY' >src/<uv_project_name>/orders_report.py
 import argparse
 import os
 
@@ -740,7 +744,7 @@ def orders_report(product=None):
     return con.execute(
         f"""
         SELECT strftime(date, '%Y-%m') AS month, count(*) AS orders, sum(quantity) AS quantity
-        FROM read_csv('{bronze}/orders.csv')
+        FROM read_csv('{bronze}/orders.csv', strict_mode = false)
         WHERE $product IS NULL OR product = $product
         GROUP BY month
         ORDER BY month
@@ -766,9 +770,9 @@ Declare the command in the `[project.scripts]` section of `pyproject.toml`:
 
 ```toml
 [project.scripts]
-dataset-users = "work.dataset_users:main"
-dataset-orders = "work.dataset_orders:main"
-orders-report = "work.orders_report:main"
+dataset-users = "<uv_project_name>.dataset_users:main"
+dataset-orders = "<uv_project_name>.dataset_orders:main"
+orders-report = "<uv_project_name>.orders_report:main"
 ```
 
 Run the report:
