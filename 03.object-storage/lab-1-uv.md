@@ -58,9 +58,12 @@ pwd
 Create a subdirectory inside `/home/onyxia/work` to use as your Git repository. You will work in this directory throughout the labs.
 
 ```bash
+# Define the name of your repo/directory accordinly
 GIT_REPO_NAME=<git-repo-name>
-mkdir $GIT_REPO_NAME
-cd $GIT_REPO_NAME
+# Environment setup
+UV_PROJECT_NAME="${GIT_REPO_NAME//-/_}"
+mkdir /home/onyxia/work/$GIT_REPO_NAME
+cd /home/onyxia/work/$GIT_REPO_NAME
 ```
 
 Initialize Git. The `.gitignore` file excludes the hidden files created by the platform and by Python, except the ones
@@ -244,7 +247,7 @@ function accepts 3 formats: `csv`, `json`, and `jsonline`. `jsonline` is a forma
 document. An empty format prints nothing.
 
 ```bash
-cat <<'PY' >src/<uv_project_name>/serialize.py
+cat <<'PY' >src/$UV_PROJECT_NAME/serialize.py
 import csv
 import io
 import json
@@ -301,7 +304,7 @@ The `users_generate` function creates a default of 50 users serialized as JSON. 
 dataset on every execution.
 
 ```bash
-cat <<'PY' >src/<uv_project_name>/dataset_users.py
+cat <<'PY' >src/$UV_PROJECT_NAME/dataset_users.py
 import argparse
 
 from faker import Faker
@@ -351,7 +354,7 @@ a quantity, and a timestamp. Orders are distributed across an hourly timeline st
 2020 by default.
 
 ```bash
-cat <<'PY' >src/<uv_project_name>/dataset_orders.py
+cat <<'PY' >src/$UV_PROJECT_NAME/dataset_orders.py
 import argparse
 import datetime
 

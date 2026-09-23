@@ -35,7 +35,7 @@ tags:
 
 - The `vscode-pyspark` Onyxia service and the project of the [previous lab](./lab-1-uv.md)
 - The [ConfigMap and Secret](../02.containerization-and-kubernetes/lab-2.md) and
-  [Job](../02.containerization-and-kubernetes/lab-3.md) labs (optional)
+  [Job](../02.containerization-and-kubernetes/lab-3.md) labs
 
 Some commands of this lab configure the bucket itself (versioning, lifecycle, policies, ACLs). Depending on the S3
 backend of the platform and on your permissions, they may return an `AccessDenied` or `NotImplemented` error. In such a
@@ -47,11 +47,6 @@ Onyxia configures the S3 access of the service in two places:
 
 - the `default` profile of the AWS configuration files, `~/.aws/credentials` and `~/.aws/config`
 - `AWS_*` environment variables
-
-To configure the AWS configurations and credentials, please copy the script from the S3 Profile Details in Data Storage tab,
-and execute the copied script in the terminal.
-
-![](./assets/onyxia-aws-config.png)
 
 The credentials are temporary. The profile is the reference: the environment variables may be missing or outdated and
 lead to authentication errors. All the commands of this lab explicitly use the profile with `--profile 'default'`.
@@ -182,6 +177,7 @@ Under the hood this is a single HTTP `PUT` request. The object is written atomic
 state during the upload.
 
 ```bash
+# Define the name of your repo/directory accordinly
 GIT_REPO_NAME=<git-repo-name>
 cd /home/onyxia/work/$GIT_REPO_NAME
 uv run dataset-users -o csv > users.csv
