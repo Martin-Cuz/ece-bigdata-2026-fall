@@ -37,8 +37,7 @@ Pipelines run in two modes:
 - **Batch**: data is processed in bounded chunks, on a schedule (every hour, every night) or when a file arrives. Simple
   to reason about, reprocess and test. Latency ranges from minutes to a day.
 - **Streaming**: data is processed continuously, record by record or in micro-batches, as events happen. Latency ranges
-  from milliseconds to seconds, at the cost of more complex operations (state, ordering, late events). Streaming is
-  covered in the Kafka and Structured Streaming modules.
+  from milliseconds to seconds, at the cost of more complex operations (state, ordering, late events).
 
 This module focuses on batch pipelines, which remain the majority of analytics workloads.
 
@@ -63,7 +62,7 @@ Extraction pulls the data from its source, with as little impact as possible on 
   is missed.
 - **Change Data Capture (CDC)**  
   The changes (inserts, updates, deletes) are read from the transaction log of the database, for example with Debezium.
-  It captures every change with a low impact on the source, and is covered in the Kafka module.
+  It captures every change with a low impact on the source.
 
 Extraction must deal with the constraints of the sources: API rate limits and pagination, credentials rotation, time
 zones, and schema drift, when a source adds, removes or renames a column without notice.
@@ -133,14 +132,10 @@ Snowflake, Spark, Trino) made SQL fast on large volumes. It became cheaper to lo
 
 Benefits:
 
-- Leverages the scalable compute of modern warehouses/lakes (Snowflake, BigQuery, Spark on a data lake) to do
-  transformation, rather than a separate ETL engine
 - Raw data is preserved as-is: simplified archiving, easy to reprocess or backfill if transformation logic changes
 - Faster time-to-load: you don't have to fully define transformations upfront
 - Better fit for unstructured/semi-structured/high-volume data, since structure can be imposed later, only for the parts
   you actually need
-- Transformations are mostly written in SQL, a language shared by engineers and analysts, and can be versioned and
-  tested like code
 - Enables a medallion architecture (Bronze → raw, Silver → cleaned/conformed, Gold → business-level aggregates), letting
   multiple transformation stages coexist
 
@@ -212,6 +207,7 @@ The Bronze layer contains the raw data, as extracted from the sources.
 - Long retention: it is the history which allows reprocessing when a bug is fixed or a new use case appears
 - Access restricted to data engineers
 
+Bronze is the "single source of truth" of the platform.
 Keeping the Bronze layer untouched decouples ingestion from transformation: a source can be ingested before anybody
 knows how it will be used, and the extraction does not have to be replayed when the transformation changes.
 
@@ -227,7 +223,7 @@ The Silver layer contains cleaned and conformed data, at the grain of the source
 - PII handled here: hashing, masking, access restriction
 - Stored in a columnar, transactional format (Parquet, Iceberg, Delta Lake)
 
-Silver is the "single source of truth" of the platform. Data scientists and analysts explore it, and all Gold datasets
+Data scientists and analysts explore the data created in silver layer, and all Gold datasets
 are built from it.
 
 ### Gold
