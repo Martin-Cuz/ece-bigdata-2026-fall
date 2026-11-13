@@ -3,3 +3,7 @@
 !.python-version
 __pycache__/
 *.csv
+*.csv
+*.duckdb
+init.sql
+data/

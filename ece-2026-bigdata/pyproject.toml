@@ -8,13 +8,20 @@ authors = [
 ]
 requires-python = ">=3.13"
 dependencies = [
+    "duckdb>=2.0.0",
     "faker>=40.54.0",
 ]
 
 [project.scripts]
 dataset-users = "ece_2026_bigdata.dataset_users:main"
 dataset-orders = "ece_2026_bigdata.dataset_orders:main"
+orders-report = "ece_2026_bigdata.orders_report:main"
 
 [build-system]
 requires = ["uv_build>=0.12.19,<0.13.0"]
 build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytz>=2026.6",
+]

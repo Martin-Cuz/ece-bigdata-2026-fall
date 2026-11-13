@@ -1,6 +1,7 @@
 import csv
 import io
 import json
+import sys
 
 
 def serialize(dataset, output):
@@ -17,6 +18,7 @@ def serialize(dataset, output):
         writer = csv.DictWriter(buffer, fieldnames=dataset[0].keys())
         writer.writeheader()
         writer.writerows(dataset)
+        sys.stdout.reconfigure(newline="")
         print(buffer.getvalue(), end="")
     else:
         raise ValueError("Unsupported output format.")
