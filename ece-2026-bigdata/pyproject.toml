@@ -1,0 +1,20 @@
+[project]
+name = "ece-2026-bigdata"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Martin-Cuz", email = "150331341+Martin-Cuz@users.noreply.github.com" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "faker>=40.54.0",
+]
+
+[project.scripts]
+dataset-users = "ece_2026_bigdata.dataset_users:main"
+dataset-orders = "ece_2026_bigdata.dataset_orders:main"
+
+[build-system]
+requires = ["uv_build>=0.12.19,<0.13.0"]
+build-backend = "uv_build"
