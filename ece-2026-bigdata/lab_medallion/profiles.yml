@@ -1,0 +1,9 @@
+lab_medallion:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: lab_medallion.duckdb
+      threads: 4
+      settings:
+        TimeZone: UTC

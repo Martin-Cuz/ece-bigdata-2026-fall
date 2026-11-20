@@ -1,0 +1,20 @@
+name: lab_medallion
+version: "1.0.0"
+profile: lab_medallion
+
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+clean-targets:
+  - target
+  - dbt_packages
+
+models:
+  lab_medallion:
+    silver:
+      +materialized: "{{ env_var('SILVER_MATERIALIZED', 'view') }}"
+      +schema: silver

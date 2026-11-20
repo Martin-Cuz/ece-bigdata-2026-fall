@@ -9,6 +9,7 @@ authors = [
 requires-python = ">=3.13"
 dependencies = [
     "duckdb>=2.0.0",
+    "dbt-duckdb>=1.9.0",
     "faker>=40.54.0",
 ]
 
