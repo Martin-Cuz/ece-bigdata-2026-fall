@@ -18,6 +18,7 @@ token() {
     -d client_secret=s3cr3t -d scope=PRINCIPAL_ROLE:ALL | jq -r .access_token
 }
 
+if [ -z "$ONLY_EX2" ]; then
 echo "##### prepare"
 run prep
 
@@ -37,6 +38,12 @@ run analyst
 
 echo "##### dev part 2"
 run dev2
+
+fi
+
+if [ -n "$ONLY_EX2" ]; then
+  run gold
+fi
 
 echo "##### exercise 2: silver_reader"
 TOKEN=$(token)

@@ -52,8 +52,8 @@ def sql(query, n=20):
 
 def attempt(label, query):
     try:
-        spark.sql(query).collect()
-        print(label, "-> succeeded")
+        rows = spark.sql(query).collect()
+        print(label, "-> succeeded", [list(r) for r in rows][:6])
     except Exception as e:
         message = str(e).replace("\n", " ")
         print(label, "-> FAILED:", type(e).__name__, message[:260])
@@ -130,9 +130,21 @@ elif MODE == "dev2":
     sql("SHOW NAMESPACES IN polaris")
     sql("SELECT count(*) AS gold_rows FROM polaris.gold.product_summary")
 
+elif MODE == "gold":
+    section("gold namespace and table")
+    spark.sql("CREATE NAMESPACE IF NOT EXISTS polaris.gold")
+    spark.sql(
+        """
+        CREATE OR REPLACE TABLE polaris.gold.product_summary AS
+        SELECT product, count(*) AS orders, sum(quantity) AS quantity
+        FROM polaris.silver.orders GROUP BY product
+        """
+    )
+    sql("SELECT count(*) AS gold_rows FROM polaris.gold.product_summary")
+
 elif MODE == "reader":
     section("read as the silver_reader principal")
-    sql("SHOW NAMESPACES IN polaris")
+    attempt("list namespaces of the catalog", "SHOW NAMESPACES IN polaris")
     attempt("list silver tables", "SHOW TABLES IN polaris.silver")
     attempt("read silver.orders", "SELECT count(*) FROM polaris.silver.orders")
     attempt("list gold tables", "SHOW TABLES IN polaris.gold")
