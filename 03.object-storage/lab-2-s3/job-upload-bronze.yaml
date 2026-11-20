@@ -1,0 +1,41 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: upload-bronze
+spec:
+  backoffLimit: 2
+  ttlSecondsAfterFinished: 3600
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: upload
+          image: amazon/aws-cli:latest
+          command: ["sh", "-c"]
+          args:
+            - |
+              set -e
+              for dataset in users orders; do
+                aws s3 cp "/data/$dataset.csv" "s3://$LAB_BUCKET_NAME/bronze/$dataset.csv"
+              done
+              aws s3 ls "s3://$LAB_BUCKET_NAME/bronze/" --recursive
+          envFrom:
+            - configMapRef:
+                name: s3-config
+            - secretRef:
+                name: s3-credentials
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+          volumeMounts:
+            - name: datasets
+              mountPath: /data
+              readOnly: true
+      volumes:
+        - name: datasets
+          configMap:
+            name: datasets
