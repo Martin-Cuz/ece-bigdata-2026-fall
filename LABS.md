@@ -15,11 +15,11 @@ were run, and an `answers.md` with the results and the answers to the questions.
 | 07 Spark SQL and DataFrames | Bronze to silver with Spark | [`07.sparksql-and-dataframes/lab-pyspark-silver/`](./07.sparksql-and-dataframes/lab-pyspark-silver) |
 | 08 Iceberg | Explore Iceberg tables | [`08.iceberg-introduction/lab-iceberg/`](./08.iceberg-introduction/lab-iceberg) |
 | 09 Polaris | Deployment and governance | [`09.polaris/`](./09.polaris) |
-| 10 Trino | | not done |
+| 10 Trino | Deployment, silver to gold, star schema | [`10.trino/`](./10.trino) |
 
 ## How the labs were run
 
-The labs 3 to 9 ran on the Onyxia platform (`vscode-pyspark` service, S3 bucket `user-m-cuziat-ece`): every
+The labs 3 to 10 ran on the Onyxia platform (`vscode-pyspark` service, S3 bucket `user-m-cuziat-ece`): every
 `answers.md` contains the observed results. Each lab folder has a `run-*.sh` script (and the Python or SQL files it
 uses) which can be replayed from a terminal of the service; the scripts expect the AWS profile `default`, the
 `KUBERNETES_NAMESPACE` variable and the bronze datasets in `s3://<bucket>/bronze/`.
@@ -28,4 +28,4 @@ Notes:
 
 - Temporary credentials, the Polaris credentials and the generated data are never committed.
 - `ece-2026-bigdata/uv.lock` was produced before `dbt-duckdb` was added: `uv sync` updates it.
-- The Iceberg `metadata/` commit step of labs 7 and 9 was not done (no Git credentials in the pod).
+- The steps that commit Iceberg `metadata/` files to Git (labs 7, 9 and 10) were not done (no Git credentials in the pod).
