@@ -1,0 +1,10 @@
+apiVersion: v2
+name: polaris
+version: 1.8.0
+dependencies:
+  - name: polaris
+    version: 1.8.0
+    repository: https://downloads.apache.org/polaris/helm-chart
+  - name: postgresql
+    version: 18.12.15
+    repository: oci://registry-1.docker.io/bitnamicharts
