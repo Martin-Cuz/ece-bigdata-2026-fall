@@ -35,7 +35,6 @@ tags:
 - Declare the CSV datasets stored on S3 as the sources of the bronze layer
 - Build the silver layer: typed, cleaned and deduplicated models
 - Validate the data with generic and singular tests, and investigate the failures
-- Build the gold layer: an incremental fact table and an aggregate exported to S3 in Parquet
 - Run the whole pipeline with `dbt build` and explore its lineage
 
 ## Prerequisites
@@ -155,7 +154,7 @@ the connection is configured below.
 ```bash
 uv run dbt init lab_medallion --skip-profile-setup
 
-cd lab_medallion
+cd /home/onyxia/work/$GIT_REPO_NAME/lab_medallion/
 
 rm -rf models/example
 
@@ -300,6 +299,14 @@ logs/
 INI
 ```
 
+### Commit
+
+```bash
+git add . ../.gitignore
+git commit -m "feat: initial dbt project"
+git push
+```
+
 ## Bronze layer
 
 The bronze layer is not built by dbt: the raw files are loaded by the ingestion process, here the Kubernetes Job of the
@@ -344,6 +351,14 @@ Questions:
   later?
 - The source reads the whole file on every query. Which other format and layout would you choose if the orders were
   ingested every hour for years?
+
+### Commit
+
+```bash
+git add models/bronze/sources.yml
+git commit -m "feat: add bronze sources definition for users and orders in dbt project"
+git push
+```
 
 ## Silver layer
 
@@ -435,6 +450,14 @@ from typed
 -- Keep a single row per order, the most recent one if the source delivers duplicates
 qualify row_number() over (partition by order_id order by ordered_at desc) = 1
 SQL
+```
+
+### Commit
+
+```bash
+git add models/silver/stg_users.sql models/silver/stg_orders.sql
+git commit -m "feat: add silver staging model for users and orders in dbt project"
+git push
 ```
 
 The generator does not produce duplicates, but ingestion processes do: retried extractions, overlapping incremental

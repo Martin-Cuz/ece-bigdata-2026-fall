@@ -147,6 +147,32 @@ with an `ExpiredToken` or `403` error, restart the service to renew them.
 
 Outside of Onyxia, the secret is created with the `CREATE SECRET` statement presented in the course.
 
+### Regenerate the s3 credentials
+
+If you have `InvalidAccessKeyId` error when using the DuckDB, it is because the `s3_onyxia_connection` is outdated and is required an update. Please update the environment variables with the updated AWS credentials. And then execute the following code:
+
+```bash
+duckdb -c "
+  DROP PERSISTENT SECRET IF EXISTS s3_onyxia_connection;
+  CREATE PERSISTENT SECRET s3_onyxia_connection (
+    TYPE s3,
+    PROVIDER credential_chain,
+    ENDPOINT 's3.seaweedfs.adm.adaltas.cloud',
+    REGION 'us-east-1',
+    URL_STYLE 'path');"
+```
+
+If you see `true`, the regenerate process is succeeded.
+
+```text
+┌─────────┐
+│ Success │
+│ boolean │
+├─────────┤
+│ true    │
+└─────────┘
+```
+
 Questions:
 
 - The persistent secret is stored in a file of your home directory. What are the risks, and why are they limited on
