@@ -10,3 +10,4 @@ data/
 target/
 dbt_packages/
 logs/
+!lab_medallion/seeds/*.csv
