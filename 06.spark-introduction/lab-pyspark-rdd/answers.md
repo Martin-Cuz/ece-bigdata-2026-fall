@@ -73,8 +73,8 @@ both RDDs are already partitioned by the same partitioner and the same number of
 ## Exercises
 
 1. `aggregateByKey((0, 0), seq, comb)` computes `(order_count, total_quantity)` per user in one pass, with no
-   intermediate list; the average quantity per order is `total / count` (**2.99** overall, from 2.71 to 3.57 per
-   user).
+   intermediate list; the average quantity per order is `total / count` (**2.99** overall, for example 2.71 to 3.57
+   for the first five users).
 2. With one fake order added, `leftOuterJoin` returns **1 order without user** (`fake-order`); the inner `join` still
    returns 2829 rows, so the unknown order is silently dropped there.
 3. DataFrame version: `groupBy("user_uuid").sum("quantity")` takes 2 lines instead of 2 for the RDD but it is typed,
