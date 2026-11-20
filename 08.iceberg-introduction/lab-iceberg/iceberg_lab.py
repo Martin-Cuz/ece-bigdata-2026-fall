@@ -42,6 +42,8 @@ spark.sql("CREATE NAMESPACE IF NOT EXISTS lab.silver")
 sql("SHOW NAMESPACES IN lab")
 
 section("create the orders table")
+spark.sql("DROP TABLE IF EXISTS lab.silver.orders PURGE")
+spark.sql("DROP TABLE IF EXISTS lab.silver.users PURGE")
 stg_orders = spark.read.parquet(f"s3a://{BUCKET}/silver/spark/orders.parquet")
 stg_orders.writeTo("lab.silver.orders").createOrReplace()
 sql("SELECT count(*) AS orders, sum(quantity) AS quantity FROM lab.silver.orders")
@@ -75,7 +77,11 @@ spark.sql(
     """
 )
 sql("SELECT source, count(*) AS orders FROM lab.silver.orders GROUP BY source ORDER BY source")
-sql(f"SELECT count(*) AS orders_first_snapshot_has_source FROM lab.silver.orders VERSION AS OF {first_snapshot} WHERE source IS NOT NULL")
+try:
+    sql(f"SELECT count(*) AS orders_first_snapshot_has_source FROM lab.silver.orders VERSION AS OF {first_snapshot} WHERE source IS NOT NULL")
+except Exception as e:
+    print("old snapshot has no 'source' column:", type(e).__name__)
+sql(f"SELECT * FROM lab.silver.orders VERSION AS OF {first_snapshot} LIMIT 1")
 sql("SELECT snapshot_id, operation FROM lab.silver.orders.snapshots ORDER BY committed_at")
 
 section("exercise 1 to 3: users table, append, time travel")
