@@ -148,7 +148,7 @@ for label, rdd in [("cached", orders_rdd), ("not cached", orders_nocache)]:
     uq.count()
     t2 = time.perf_counter() - t
     print(label, f"orders.count() {t1:.3f}s", f"user_quantity.count() {t2:.3f}s", "storage level:", rdd.getStorageLevel())
-print("cached RDDs:", [(r.name(), r.memSize) for r in sc._jsc.sc().getRDDStorageInfo()] if False else len(sc._jsc.sc().getPersistentRDDs()))
+print("is_cached cached/not cached:", orders_rdd.is_cached, orders_nocache.is_cached)
 
 spark.stop()
 print("\n### done")
