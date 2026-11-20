@@ -11,6 +11,8 @@ dependencies = [
     "duckdb>=2.0.0",
     "dbt-duckdb>=1.9.0",
     "faker>=40.54.0",
+    "pandas>=2.2",
+    "trino>=0.330.0",
 ]
 
 [project.scripts]

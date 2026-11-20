@@ -1,0 +1,83 @@
+trino:
+  image:
+    tag: "480"
+
+  server:
+    workers: 0 # Coordinator-only; enables node-scheduler.include-coordinator.
+    config:
+      query:
+        maxMemory: "400MB"
+
+  coordinator:
+    jvm:
+      maxHeapSize: "700M"
+    resources:
+      requests:
+        cpu: 10m
+        memory: 224Mi
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+    config:
+      nodeScheduler:
+        includeCoordinator: true
+      query:
+        maxMemoryPerNode: "250MB"
+
+  envFrom:
+    - secretRef:
+        name: trino-polaris-oauth
+
+  env:
+    - name: AWS_ACCESS_KEY_ID
+      valueFrom:
+        secretKeyRef:
+          name: polaris-s3
+          key: AWS_ACCESS_KEY_ID
+    - name: AWS_SECRET_ACCESS_KEY
+      valueFrom:
+        secretKeyRef:
+          name: polaris-s3
+          key: AWS_SECRET_ACCESS_KEY
+    - name: AWS_SESSION_TOKEN
+      valueFrom:
+        secretKeyRef:
+          name: polaris-s3
+          key: AWS_SESSION_TOKEN
+
+    - name: POLARIS_CATALOG
+      valueFrom:
+        configMapKeyRef:
+          name: polaris-config
+          key: POLARIS_CATALOG
+    - name: POLARIS_URI
+      valueFrom:
+        configMapKeyRef:
+          name: polaris-config
+          key: POLARIS_URI
+    - name: S3_ENDPOINT
+      valueFrom:
+        configMapKeyRef:
+          name: polaris-config
+          key: S3_ENDPOINT
+
+  additionalCatalogs:
+    lakehouse: |-
+      connector.name=iceberg
+      iceberg.catalog.type=rest
+      iceberg.rest-catalog.uri=${ENV:POLARIS_URI}/api/catalog
+      iceberg.rest-catalog.warehouse=${ENV:POLARIS_CATALOG}
+      iceberg.rest-catalog.security=OAUTH2
+      iceberg.rest-catalog.oauth2.server-uri=${ENV:POLARIS_URI}/api/catalog/v1/oauth/tokens
+      iceberg.rest-catalog.oauth2.credential=${ENV:POLARIS_DEV_CREDENTIAL}
+      iceberg.rest-catalog.oauth2.scope=PRINCIPAL_ROLE:ALL
+      fs.native-s3.enabled=true
+      s3.endpoint=${ENV:S3_ENDPOINT}
+      s3.region=us-east-1
+      s3.path-style-access=true
+
+  service:
+    type: ClusterIP
+
+  ingress:
+    enabled: false # Trino is unauthenticated here; use port-forward.

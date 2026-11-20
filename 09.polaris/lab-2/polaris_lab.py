@@ -130,6 +130,20 @@ elif MODE == "dev2":
     sql("SHOW NAMESPACES IN polaris")
     sql("SELECT count(*) AS gold_rows FROM polaris.gold.product_summary")
 
+elif MODE == "restore_users":
+    section("register silver.users in polaris")
+    spark.sql("CREATE NAMESPACE IF NOT EXISTS polaris.silver")
+    sql(
+        f"""
+        CALL polaris.system.register_table(
+          table => 'silver.users',
+          metadata_file => '{os.environ['USERS_METADATA_FILE']}'
+        )
+        """
+    )
+    sql("SHOW TABLES IN polaris.silver")
+    sql("SELECT count(*) AS users FROM polaris.silver.users")
+
 elif MODE == "gold":
     section("gold namespace and table")
     spark.sql("CREATE NAMESPACE IF NOT EXISTS polaris.gold")

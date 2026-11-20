@@ -1,0 +1,7 @@
+apiVersion: v2
+name: trino
+version: 1.45.0
+dependencies:
+  - name: trino
+    version: 1.45.0
+    repository: https://trinodb.github.io/charts
